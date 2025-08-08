@@ -226,6 +226,7 @@ const validateTaskFilters = [
 
 module.exports = {
   handleValidationErrors,
+  validateRequest: handleValidationErrors, // Alias for backward compatibility
   validateUserRegistration,
   validateUserLogin,
   validateProject,
