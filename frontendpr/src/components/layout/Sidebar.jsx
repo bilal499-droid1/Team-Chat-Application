@@ -5,7 +5,6 @@ import {
   FolderIcon,
   ChatBubbleLeftIcon,
   UserGroupIcon,
-  CalendarIcon,
   ChartBarIcon,
   CogIcon,
   XMarkIcon,
@@ -20,7 +19,6 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
     { name: 'Projects', href: '/projects', icon: FolderIcon },
     { name: 'Messages', href: '/messages', icon: ChatBubbleLeftIcon },
     { name: 'Team', href: '/team', icon: UserGroupIcon },
-    { name: 'Calendar', href: '/calendar', icon: CalendarIcon },
     { name: 'Analytics', href: '/analytics', icon: ChartBarIcon },
     { name: 'Settings', href: '/settings', icon: CogIcon },
   ];

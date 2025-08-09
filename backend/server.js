@@ -46,31 +46,63 @@ connectDB().catch((err) => {
 // Security Middleware
 app.use(helmet());
 
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
-  message: "Too many requests from this IP, please try again later.",
-});
-app.use("/api/", limiter);
+// Rate limiting - DISABLED FOR DEVELOPMENT
+// const limiter = rateLimit({
+//   windowMs: 15 * 60 * 1000, // 15 minutes
+//   max: 100, // limit each IP to 100 requests per windowMs
+//   message: "Too many requests from this IP, please try again later.",
+// });
+// app.use("/api/", limiter);
 
-// CORS Middleware - Allow all origins for development
+// CORS Middleware - Comprehensive configuration for development
 app.use(
   cors({
-    origin: "*", // Allow all origins for development
+    origin: [
+      "http://localhost:3000",
+      "http://localhost:5173",
+      "http://localhost:5174",
+      "http://127.0.0.1:3000",
+      "http://127.0.0.1:5173",
+      "http://127.0.0.1:5174"
+    ],
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     credentials: true,
-    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
-    exposedHeaders: ["Content-Length", "X-Foo", "X-Bar"]
+    allowedHeaders: [
+      "Content-Type", 
+      "Authorization", 
+      "X-Requested-With",
+      "Accept",
+      "Origin",
+      "Access-Control-Request-Method",
+      "Access-Control-Request-Headers"
+    ],
+    exposedHeaders: ["Content-Length", "X-Foo", "X-Bar"],
+    optionsSuccessStatus: 200 // Support legacy browsers
   })
 );
 
-// Handle preflight requests explicitly
-app.options('*', (req, res) => {
-  res.header('Access-Control-Allow-Origin', '*');
+// Additional CORS headers for all requests
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
   res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS,PATCH');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
-  res.header('Access-Control-Allow-Credentials', true);
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin, Access-Control-Request-Method, Access-Control-Request-Headers');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(200);
+    return;
+  }
+  
+  next();
+});
+
+// Handle preflight requests explicitly for all routes
+app.options('*', (req, res) => {
+  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS,PATCH');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin, Access-Control-Request-Method, Access-Control-Request-Headers');
+  res.header('Access-Control-Allow-Credentials', 'true');
   res.sendStatus(200);
 });
 
@@ -122,6 +154,7 @@ app.get("/api", (req, res) => {
 
 // Socket.io connection handling
 const connectedUsers = new Map(); // Track connected users
+const typingUsers = new Map(); // Track typing users per project
 
 io.on("connection", (socket) => {
   console.log("👤 New client connected:", socket.id);
@@ -136,7 +169,7 @@ io.on("connection", (socket) => {
       connectedUsers.set(socket.id, {
         userId: decoded.userId,
         socketId: socket.id,
-        connectedAt: new Date(),
+        connectedAt: new Date()
       });
 
       console.log(
@@ -162,15 +195,6 @@ io.on("connection", (socket) => {
       socketId: socket.id,
       timestamp: new Date(),
     });
-
-    // Send current online users in project
-    const projectUsers = Array.from(
-      io.sockets.adapter.rooms.get(projectId) || []
-    )
-      .map((socketId) => connectedUsers.get(socketId))
-      .filter((user) => user && user.userId);
-
-    socket.emit("project-users-online", projectUsers);
   });
 
   // Handle leaving a project room
@@ -184,6 +208,53 @@ io.on("connection", (socket) => {
       userId: socket.userId,
       socketId: socket.id,
       timestamp: new Date(),
+    });
+  });
+
+  // Real-time messaging features
+  socket.on("message-delivered", (data) => {
+    // Confirm message delivery to sender
+    socket.to(data.projectId).emit("message-delivery-confirmed", {
+      messageId: data.messageId,
+      deliveredTo: socket.userId,
+      timestamp: new Date()
+    });
+  });
+
+  socket.on("message-read", (data) => {
+    // Mark message as read
+    socket.to(data.projectId).emit("message-read-confirmed", {
+      messageId: data.messageId,
+      readBy: socket.userId,
+      timestamp: new Date()
+    });
+  });
+
+  // Typing indicators
+  socket.on("typing-start", (data) => {
+    const projectId = data.projectId;
+    if (!typingUsers.has(projectId)) {
+      typingUsers.set(projectId, new Set());
+    }
+    typingUsers.get(projectId).add(socket.userId);
+    
+    socket.to(projectId).emit("user-typing", {
+      userId: socket.userId,
+      username: data.username,
+      isTyping: true
+    });
+  });
+
+  socket.on("typing-stop", (data) => {
+    const projectId = data.projectId;
+    if (typingUsers.has(projectId)) {
+      typingUsers.get(projectId).delete(socket.userId);
+    }
+    
+    socket.to(projectId).emit("user-typing", {
+      userId: socket.userId,
+      username: data.username,
+      isTyping: false
     });
   });
 
@@ -223,9 +294,20 @@ io.on("connection", (socket) => {
     try {
       const Message = require("./models/Message");
 
+      // For file messages, content can be empty, use filename as content or a default message
+      let messageContent = data.content;
+      if (!messageContent && data.attachment) {
+        messageContent = data.attachment.filename || "📎 File attachment";
+      }
+      
+      // Ensure we have some content
+      if (!messageContent) {
+        messageContent = "📝 Message";
+      }
+
       // Save message to database
       const message = new Message({
-        content: data.content,
+        content: messageContent,
         sender: socket.userId,
         project: data.projectId,
         messageType: data.messageType || "text",
@@ -235,12 +317,16 @@ io.on("connection", (socket) => {
       await message.save();
       await message.populate("sender", "username fullName avatar");
 
-      console.log("💬 New message from:", message.sender.username);
+      console.log(`💬 New message from: ${message.sender.username} at ${new Date().toLocaleTimeString()}`);
 
-      // Broadcast to all users in the project
+      // Broadcast to all users in the project with enhanced timestamp info
       io.to(data.projectId).emit("new-message", {
-        message: message,
-        timestamp: new Date(),
+        message: {
+          ...message.toObject(),
+          sentAt: data.sentAt || new Date().toISOString(),
+          deliveredAt: new Date().toISOString()
+        },
+        timestamp: new Date().toISOString(),
       });
     } catch (error) {
       console.error("Error saving message:", error);
@@ -315,7 +401,19 @@ io.on("connection", (socket) => {
     if (userData) {
       connectedUsers.delete(socket.id);
 
-      // Notify all rooms this user was in
+      // Clean up typing indicators
+      for (const [projectId, typingSet] of typingUsers.entries()) {
+        if (typingSet.has(userData.userId)) {
+          typingSet.delete(userData.userId);
+          // Notify that user stopped typing
+          socket.to(projectId).emit("user-typing", {
+            userId: userData.userId,
+            isTyping: false
+          });
+        }
+      }
+
+      // Notify all rooms this user was in about disconnection
       const rooms = Array.from(socket.rooms);
       rooms.forEach((room) => {
         if (room !== socket.id) {

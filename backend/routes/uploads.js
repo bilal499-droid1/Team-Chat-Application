@@ -2,6 +2,7 @@ const express = require("express");
 const multer = require("multer");
 const {
   upload,
+  uploadFile,
   uploadAvatar,
   uploadTaskAttachment,
   deleteAttachment,
@@ -12,8 +13,25 @@ const { protect } = require("../middleware/auth");
 
 const router = express.Router();
 
-// All routes require authentication
+// Test route to check if upload routes are working
+router.get("/test", (req, res) => {
+  res.json({ message: "Upload routes are working!" });
+});
+
+// Add logging middleware for all upload requests
+router.use((req, res, next) => {
+  console.log(`📄 Upload Request: ${req.method} ${req.path}`);
+  console.log(`📄 Headers:`, req.headers);
+  next();
+});
+
+// All other routes require authentication
 router.use(protect);
+
+// @route   POST /api/uploads
+// @desc    Upload general files (for messages)
+// @access  Private
+router.post("/", upload.single("file"), uploadFile);
 
 // @route   POST /api/uploads/avatar
 // @desc    Upload user avatar

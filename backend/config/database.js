@@ -1,15 +1,17 @@
 const mongoose = require("mongoose");
-const dotenv = require("dotenv");
+const path = require("path");
 
-// Load environment variables
-dotenv.config();
+// Load environment variables from the backend directory
+require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
 const connectDB = async () => {
   try {
     console.log("Attempting to connect to MongoDB...");
     console.log("MongoDB URI:", process.env.MONGODB_URI);
 
-    const conn = await mongoose.connect(process.env.MONGODB_URI, {
+    const mongoURI = process.env.MONGODB_URI || "mongodb://localhost:27017/collaboration-tool";
+    
+    const conn = await mongoose.connect(mongoURI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
     });

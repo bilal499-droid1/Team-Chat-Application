@@ -123,6 +123,51 @@ const uploadAvatar = async (req, res) => {
   }
 };
 
+// @desc    Upload general file (for messages)
+// @route   POST /api/uploads
+// @access  Private
+const uploadFile = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "No file uploaded",
+      });
+    }
+
+    const fileUrl = `/uploads/${req.file.filename}`;
+
+    res.json({
+      success: true,
+      message: "File uploaded successfully",
+      data: {
+        filename: req.file.filename,
+        originalName: req.file.originalname,
+        mimetype: req.file.mimetype,
+        size: req.file.size,
+        path: fileUrl,
+        url: fileUrl
+      },
+    });
+  } catch (error) {
+    console.error("Upload File Error:", error);
+
+    // Clean up uploaded file on error
+    if (req.file) {
+      try {
+        await fs.unlink(req.file.path);
+      } catch (unlinkError) {
+        console.error("Error deleting uploaded file:", unlinkError);
+      }
+    }
+
+    res.status(500).json({
+      success: false,
+      message: "Server error uploading file",
+    });
+  }
+};
+
 // @desc    Upload task attachment
 // @route   POST /api/uploads/task/:taskId
 // @access  Private (Project members only)
@@ -364,6 +409,7 @@ const cleanupFiles = async (req, res) => {
 
 module.exports = {
   upload,
+  uploadFile,
   uploadAvatar,
   uploadTaskAttachment,
   deleteAttachment,

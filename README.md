@@ -8,14 +8,13 @@ A modern, real-time team collaboration platform similar to Trello, built with th
 - **User Authentication** - Secure JWT-based registration and login
 - **Project Management** - Create, manage, and collaborate on projects with team members
 - **Kanban Board** - Intuitive drag-and-drop task management system
-- **Real-time Chat** - Live messaging with emoji reactions and read receipts
+- **Real-time Chat** - Live messaging with file sharing support
 - **File Uploads** - Support for avatars and task attachments
 - **Team Collaboration** - Role-based permissions and project invite system
 
 ### ⚡ Real-time Features
 - Live task updates across all connected users
 - Real-time chat with typing indicators
-- Online/offline status tracking
 - Instant notifications for task assignments and updates
 - Live project member activity
 
@@ -175,19 +174,15 @@ GET    /api/tasks/stats/:projectId    - Get task statistics
 
 ### Real-time Chat
 ```
-GET    /api/messages/project/:projectId  - Get chat history
-POST   /api/messages                     - Send message
-PUT    /api/messages/:id                 - Edit message
-DELETE /api/messages/:id                 - Delete message
-POST   /api/messages/:id/reactions       - Add emoji reaction
-DELETE /api/messages/:id/reactions       - Remove reaction
-POST   /api/messages/:id/read            - Mark message as read
-GET    /api/messages/unread/:projectId   - Get unread message count
+GET    /api/messages/:projectId     - Get messages for a project
+POST   /api/messages                - Send new message
+GET    /api/messages/unread/:userId - Get unread message count
 ```
 
 ### File Management
 ```
-POST   /api/uploads/avatar              - Upload user avatar
+POST   /api/uploads                     - Upload files for messages
+POST   /api/uploads/avatar              - Upload user avatar  
 POST   /api/uploads/task/:taskId        - Upload task attachment
 DELETE /api/uploads/task/:taskId/attachment/:attachmentId - Delete attachment
 GET    /api/uploads/info/:filename      - Get file information
@@ -197,23 +192,36 @@ POST   /api/uploads/cleanup             - Clean orphaned files (Admin)
 ## 🔌 Socket.io Real-time Events
 
 ### Client → Server Events
+- `authenticate` - Authenticate user with JWT token
 - `join-project` - Join a project room for real-time updates
 - `leave-project` - Leave project room
 - `send-message` - Send chat message
-- `task-updated` - Task modification event
+- `message-delivered` - Confirm message delivery
+- `message-read` - Mark message as read
+- `typing-start` - User started typing
+- `typing-stop` - User stopped typing
+- `task-created` - New task created
+- `task-updated` - Task modified
 - `task-moved` - Task drag & drop event
-- `user-typing` - User typing indicator
-- `user-stopped-typing` - Stop typing indicator
+- `task-update` - Task update (legacy support)
+- `new-message` - New message (legacy support)
 
 ### Server → Client Events
-- `message-received` - New chat message
+- `authenticated` - Authentication successful
+- `authentication-error` - Authentication failed
+- `user-joined-project` - User joined project
+- `user-left-project` - User left project
+- `new-message` - New chat message
+- `message-delivery-confirmed` - Message delivery confirmed
+- `message-read-confirmed` - Message read confirmed
+- `message-error` - Message sending failed
+- `user-typing` - Someone is typing
+- `user-stopped-typing` - Someone stopped typing
 - `task-created` - New task added
 - `task-updated` - Task modified
-- `task-deleted` - Task removed
-- `user-joined` - User joined project
-- `user-left` - User left project
-- `user-typing` - Someone is typing
+- `task-moved` - Task moved/repositioned
 - `notification` - General notifications
+- `user-disconnected` - User disconnected from project
 
 ## 🔒 Security Features
 
