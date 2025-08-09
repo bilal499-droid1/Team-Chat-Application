@@ -4,7 +4,7 @@ const RecentActivity = () => {
   const activities = [
     {
       id: 1,
-      user: { name: 'Sarah Wilson', avatar: 'SW' },
+      user: { name: 'Ali', avatar: 'A' },
       action: 'completed task',
       target: 'User Authentication',
       project: 'E-commerce Website',
@@ -13,7 +13,7 @@ const RecentActivity = () => {
     },
     {
       id: 2,
-      user: { name: 'Tom Brown', avatar: 'TB' },
+      user: { name: 'Bilal', avatar: 'B' },
       action: 'added comment to',
       target: 'API Integration',
       project: 'Mobile App',
@@ -22,7 +22,7 @@ const RecentActivity = () => {
     },
     {
       id: 3,
-      user: { name: 'Emily Davis', avatar: 'ED' },
+      user: { name: 'Talha', avatar: 'T' },
       action: 'uploaded file',
       target: 'Design Assets.zip',
       project: 'Marketing Campaign',
@@ -31,7 +31,7 @@ const RecentActivity = () => {
     },
     {
       id: 4,
-      user: { name: 'Chris Lee', avatar: 'CL' },
+      user: { name: 'Kashaf', avatar: 'K' },
       action: 'created new task',
       target: 'Social Media Graphics',
       project: 'Marketing Campaign',
@@ -40,7 +40,7 @@ const RecentActivity = () => {
     },
     {
       id: 5,
-      user: { name: 'Alex Kim', avatar: 'AK' },
+      user: { name: 'Naimer', avatar: 'N' },
       action: 'joined project',
       target: 'Backend Development',
       project: 'E-commerce Website',

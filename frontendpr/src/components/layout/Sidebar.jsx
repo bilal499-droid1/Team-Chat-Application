@@ -1,12 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { projectAPI } from '../../services/api';
 import {
   HomeIcon,
   FolderIcon,
   ChatBubbleLeftIcon,
   UserGroupIcon,
-  ChartBarIcon,
-  CogIcon,
   XMarkIcon,
   PlusIcon
 } from '@heroicons/react/24/outline';
@@ -18,16 +17,23 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
     { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
     { name: 'Projects', href: '/projects', icon: FolderIcon },
     { name: 'Messages', href: '/messages', icon: ChatBubbleLeftIcon },
-    { name: 'Team', href: '/team', icon: UserGroupIcon },
-    { name: 'Analytics', href: '/analytics', icon: ChartBarIcon },
-    { name: 'Settings', href: '/settings', icon: CogIcon },
   ];
 
-  const recentProjects = [
-    { name: 'Website Redesign', color: 'bg-blue-500' },
-    { name: 'Mobile App', color: 'bg-green-500' },
-    { name: 'Marketing Campaign', color: 'bg-purple-500' },
-  ];
+  const [recentProjects, setRecentProjects] = useState([]);
+
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        const response = await projectAPI.getProjects();
+        // The backend returns { data: { projects: [...] } }
+        const projects = response.data?.data?.projects || [];
+        setRecentProjects(projects.slice(0, 3));
+      } catch (error) {
+        console.error('Error fetching recent projects:', error);
+      }
+    };
+    fetchProjects();
+  }, []);
 
   const isActive = (href) => location.pathname === href;
 
@@ -81,27 +87,15 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
         
         <div className="space-y-2">
           {recentProjects.map((project, index) => (
-            <div key={index} className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-100 cursor-pointer">
-              <div className={`w-3 h-3 rounded-full ${project.color}`}></div>
+            <div key={project._id || index} className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-100 cursor-pointer">
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: project.color || '#6366f1' }}></div>
               <span className="text-sm text-gray-700 truncate">{project.name}</span>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Upgrade to Pro Section */}
-      <div className="p-4 border-t border-gray-200">
-        <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg p-4 text-center">
-          <div className="w-8 h-8 bg-white bg-opacity-20 rounded-lg mx-auto mb-2 flex items-center justify-center">
-            <span className="text-white text-lg">⚡</span>
-          </div>
-          <h4 className="text-white font-semibold text-sm mb-1">Upgrade to Pro</h4>
-          <p className="text-blue-100 text-xs mb-3">Unlock all features</p>
-          <button className="w-full bg-white text-blue-600 text-xs font-semibold py-2 px-3 rounded-lg hover:bg-gray-100 transition-colors">
-            Upgrade Now
-          </button>
-        </div>
-      </div>
+      {/* Upgrade to Pro section removed as requested */}
     </div>
   );
 
