@@ -679,6 +679,43 @@ const removeMember = async (req, res) => {
   }
 };
 
+// @desc    Get dashboard statistics
+// @route   GET /api/projects/stats
+// @access  Private
+const getDashboardStats = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    // Find all projects where user is owner or member
+    const projects = await Project.find({
+      $or: [
+        { owner: userId },
+        { "members.user": userId }
+      ]
+    });
+
+    const totalProjects = projects.length;
+    const activeProjects = projects.filter(p => p.status === "active").length;
+    const completedProjects = projects.filter(p => p.status === "completed").length;
+
+    const result = {
+      totalProjects,
+      activeProjects,
+      completedTasks: completedProjects
+    };
+
+    res.json({
+      success: true,
+      data: result,
+    });
+  } catch (error) {
+    console.error("Get Dashboard Stats Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error fetching dashboard statistics",
+    });
+  }
+};
+
 module.exports = {
   getProjects,
   getProject,
@@ -690,4 +727,5 @@ module.exports = {
   inviteToProject,
   updateMemberRole,
   removeMember,
+  getDashboardStats,
 };

@@ -57,14 +57,7 @@ app.use(helmet());
 // CORS Middleware - Comprehensive configuration for development
 app.use(
   cors({
-    origin: [
-      "http://localhost:3000",
-      "http://localhost:5173",
-      "http://localhost:5174",
-      "http://127.0.0.1:3000",
-      "http://127.0.0.1:5173",
-      "http://127.0.0.1:5174"
-    ],
+    origin: '*',
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     credentials: true,
     allowedHeaders: [
@@ -77,25 +70,12 @@ app.use(
       "Access-Control-Request-Headers"
     ],
     exposedHeaders: ["Content-Length", "X-Foo", "X-Bar"],
-    optionsSuccessStatus: 200 // Support legacy browsers
+
+    optionsSuccessStatus: 200
   })
 );
 
-// Additional CORS headers for all requests
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
-  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS,PATCH');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin, Access-Control-Request-Method, Access-Control-Request-Headers');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  
-  // Handle preflight requests
-  if (req.method === 'OPTIONS') {
-    res.sendStatus(200);
-    return;
-  }
-  
-  next();
-});
+
 
 // Handle preflight requests explicitly for all routes
 app.options('*', (req, res) => {

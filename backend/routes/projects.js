@@ -13,6 +13,7 @@ const {
   inviteToProject,
   updateMemberRole,
   removeMember,
+  getDashboardStats,
 } = require("../controllers/projectController");
 
 // Import middleware
@@ -30,6 +31,14 @@ const { body } = require("express-validator");
 
 // All routes require authentication
 router.use(authMiddleware);
+
+// @route   GET /api/projects/stats
+// @desc    Get dashboard statistics
+// @access  Private
+router.get("/stats", (req, res, next) => {
+  console.log('📊 Stats route hit by user:', req.user?.username || req.user?._id);
+  next();
+}, getDashboardStats);
 
 // @route   GET /api/projects
 // @desc    Get all projects for authenticated user
