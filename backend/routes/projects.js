@@ -10,6 +10,9 @@ const {
   deleteProject,
   joinProject,
   leaveProject,
+  inviteToProject,
+  updateMemberRole,
+  removeMember,
 } = require("../controllers/projectController");
 
 // Import middleware
@@ -125,6 +128,55 @@ router.post(
   validateObjectId("id"),
   projectMemberMiddleware,
   leaveProject
+);
+
+// @route   POST /api/projects/:id/invite
+// @desc    Invite user to project
+// @access  Private (All project members can invite)
+router.post(
+  "/:id/invite",
+  [
+    validateObjectId("id"),
+    projectMemberMiddleware,
+    body("email")
+      .isEmail()
+      .normalizeEmail()
+      .withMessage("Valid email is required"),
+    body("role")
+      .optional()
+      .isIn(["member", "admin", "owner"])
+      .withMessage("Role must be member, admin, or owner"),
+  ],
+  inviteToProject
+);
+
+// @route   PUT /api/projects/:id/members/:userId/role
+// @desc    Update member role
+// @access  Private (Owner/Admin only)
+router.put(
+  "/:id/members/:userId/role",
+  [
+    validateObjectId("id"),
+    validateObjectId("userId"),
+    projectMemberMiddleware,
+    body("role")
+      .isIn(["member", "admin", "owner"])
+      .withMessage("Role must be member, admin, or owner"),
+  ],
+  updateMemberRole
+);
+
+// @route   DELETE /api/projects/:id/members/:userId
+// @desc    Remove member from project
+// @access  Private (Owner/Admin only)
+router.delete(
+  "/:id/members/:userId",
+  [
+    validateObjectId("id"),
+    validateObjectId("userId"),
+    projectMemberMiddleware,
+  ],
+  removeMember
 );
 
 module.exports = router;
